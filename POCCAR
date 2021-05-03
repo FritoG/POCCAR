@@ -1,0 +1,76 @@
+import sys, time
+import serial
+import pygame
+ser = serial.Serial("COM5")
+ser.baudrate = 33000
+
+from pygame.locals import *
+pygame.init()
+joycount = pygame.joystick.get_count()
+joystick = pygame.joystick.Joystick(0)
+joystick.init()
+joy = []
+for i in range(joycount):
+    joy.append(pygame.joystick.Joystick(i))
+    name = joy[i].get_name()
+    joy[i].init()
+    numaxes= joy[i].get_numaxes()
+    axis = []
+    for j in range(numaxes):
+        axis.append(joy[i].get_axis(j))
+pygame.event.set_blocked((MOUSEMOTION, MOUSEBUTTONUP, MOUSEBUTTONDOWN))
+counter = 0
+
+print("hola POCCAR")
+salir=0
+while (salir==0):
+
+    keys = pygame.key.get_pressed()
+    if keys[K_a]:
+        salir=1
+    if (salir==0):
+            if joystick.get_button(0):
+                ser.write(bytes(b'7'))
+                line=ser.readline()
+                strlenline=len(line)
+                print("distance1:",line[0:strlenline-2])
+                ser.write(bytes(b'x'))
+                time.sleep(2)
+            if joystick.get_button(6):   #left trigger 90
+                ser.write(bytes(b'1'))
+
+            if joystick.get_button(7):  #right trigger 90
+                ser.write(bytes(b'1'))
+
+            if joystick.get_button(3): #avance
+                ser.write(bytes(b'3'))
+            elif joystick.get_button(1): #reversa
+                ser.write(bytes(b'0'))
+            elif joystick.get_button(2): #agua
+                ser.write(bytes(b'a'))
+            else:
+                ser.write(bytes(b'y')) #parada motor adelante-atras
+
+            for event in [pygame.event.wait(), ] + pygame.event.get():
+                if event.type == JOYAXISMOTION:
+                    #joy[event.joy].get_axis() = event.value
+                    joystick = pygame.joystick.Joystick(0)
+                    for k in range(2):
+                        axis = joystick.get_axis( k )
+                        #print("Axis {} value: {:>6.3f}".format(k, axis))
+
+                    #print("Axis {} value: {:>6.3f}".format(k, axis) )
+
+                    if  joystick.get_axis(0) == 1 or  joystick.get_axis(0) >= 0.98:
+                           ser.write(bytes(b'6'))
+
+                    elif  joystick.get_axis(0) == -1 or  joystick.get_axis(0) <= -0.98:
+                           ser.write(bytes(b'5'))
+                    else:
+                        ser.write(bytes(b'u')) #parada motor rueda
+
+
+ser.close()
+pygame.quit()
+print("bye")
+time.sleep(2)
